@@ -498,6 +498,26 @@ Bot.adapter.push(
       })
     }
 
+    /**
+     * 给消息贴表情（QQ 的「表情回应」）。对应 OneBot v11 扩展 action
+     * `set_msg_emoji_like`，NapCat / LLOneBot / Lagrange 等主流协议端都支持。
+     * emoji_id 是 QQ 表情 ID（十进制，如 111=QAQ）；部分协议端还接受 `set` 是否贴/取消。
+     */
+    async setEmojiLike(data, message_id, emoji_id, set = true) {
+      try {
+        return await data.bot.sendApi("set_msg_emoji_like", {
+          message_id: String(message_id),
+          emoji_id: String(emoji_id),
+          set: Boolean(set),
+        })
+      } catch (err) {
+        // 调用方（如 chatgpt 的「回复确认」）通常不 await；协议端不支持或消息过期时会抛错，
+        // 这里兜住避免变成未处理的 rejection，只记一条 debug。
+        Bot.makeLog("debug", `贴表情失败：${err?.message || err}`, `${data.self_id} => ${data.group_id}`)
+        return false
+      }
+    }
+
     setGroupName(data, group_name) {
       Bot.makeLog("info", `设置群名：${group_name}`, `${data.self_id} => ${data.group_id}`, true)
       return data.bot.sendApi("set_group_name", {
@@ -936,6 +956,8 @@ Bot.adapter.push(
         getMemberMap: this.getMemberMap.bind(this, i),
         pickMember: this.pickMember.bind(this, i, group_id),
         pokeMember: qq => this.sendGroupMsg(i, { type: "poke", qq }),
+        // 聊天插件（chatgpt 等）用 e.group.setEmojiLike(消息id, 表情id) 做「回复确认」
+        setEmojiLike: this.setEmojiLike.bind(this, i),
         setName: this.setGroupName.bind(this, i),
         setAvatar: this.setGroupAvatar.bind(this, i),
         setAdmin: this.setGroupAdmin.bind(this, i),
