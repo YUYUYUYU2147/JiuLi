@@ -503,6 +503,36 @@ Bot.adapter.push(
      * `set_msg_emoji_like`，NapCat / LLOneBot / Lagrange 等主流协议端都支持。
      * emoji_id 是 QQ 表情 ID（十进制，如 111=QAQ）；部分协议端还接受 `set` 是否贴/取消。
      */
+    /**
+     * 戳一戳（群/好友）。
+     *
+     * 走协议端的 poke 动作而不是 `{type:"poke"}` 消息段：NapCat/LLOneBot 等并不把
+     * poke 当消息段发送，原先发 send_msg 带 poke 段会被忽略，表现为「反戳不生效」。
+     * 依次尝试 send_poke（带 group_id 的通用口）→ group_poke/friend_poke → 旧消息段。
+     */
+    async pokeMember(data, user_id, group_id = data.group_id) {
+      const uid = String(user_id)
+      const attempts = group_id
+        ? [["send_poke", { user_id: uid, group_id: String(group_id) }], ["group_poke", { user_id: uid, group_id: String(group_id) }]]
+        : [["send_poke", { user_id: uid }], ["friend_poke", { user_id: uid }]]
+      for (const [action, params] of attempts) {
+        try {
+          return await data.bot.sendApi(action, params)
+        } catch (err) {
+          Bot.makeLog("debug", `戳一戳 ${action} 失败：${err?.message || err}`, `${data.self_id} => ${group_id || uid}`)
+        }
+      }
+      // 最后退回消息段（极少数仍支持 poke 段的实现）
+      try {
+        return group_id
+          ? await this.sendGroupMsg(data, { type: "poke", qq: uid })
+          : await this.sendFriendMsg(data, { type: "poke", qq: uid })
+      } catch (err) {
+        Bot.makeLog("debug", `戳一戳失败：${err?.message || err}`)
+        return false
+      }
+    }
+
     async setEmojiLike(data, message_id, emoji_id, set = true) {
       try {
         return await data.bot.sendApi("set_msg_emoji_like", {
@@ -886,7 +916,7 @@ Bot.adapter.push(
         getAvatarUrl() {
           return this.avatar || `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`
         },
-        poke: this.sendGroupMsg.bind(this, i, { type: "poke", qq: user_id }),
+        poke: () => this.pokeMember(i, user_id, group_id),
         mute: this.setGroupBan.bind(this, i, user_id),
         kick: this.setGroupKick.bind(this, i, user_id),
         get is_friend() {
@@ -955,7 +985,7 @@ Bot.adapter.push(
         getMemberList: this.getMemberList.bind(this, i),
         getMemberMap: this.getMemberMap.bind(this, i),
         pickMember: this.pickMember.bind(this, i, group_id),
-        pokeMember: qq => this.sendGroupMsg(i, { type: "poke", qq }),
+        pokeMember: qq => this.pokeMember(i, qq, group_id),
         // 聊天插件（chatgpt 等）用 e.group.setEmojiLike(消息id, 表情id) 做「回复确认」
         setEmojiLike: this.setEmojiLike.bind(this, i),
         setName: this.setGroupName.bind(this, i),
