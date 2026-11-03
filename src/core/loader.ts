@@ -1166,6 +1166,16 @@ class PluginsLoader {
             else if (e.friend?.getMsg) e.getReply = () => e.friend.getMsg(e.reply_id)
             break
           case 'file':
+            // 兼容云崽的 e.file 字段名：OneBot/NapCat 给的是 file_id / file_size，
+            // 云崽插件（如 Mys 的抽卡记录导入）读的是 fid / name / size / url。
+            // 这里做一次别名，避免插件拿 e.file.fid 为空而取不到文件地址。
+            if (i && !(i as any).data) {
+              const f = i as any
+              if (f.fid === undefined && f.file_id !== undefined) f.fid = f.file_id
+              if (f.name === undefined && f.file !== undefined) f.name = f.file
+              if (f.size === undefined && f.file_size !== undefined) f.size = f.file_size
+              if (f.url === undefined && f.file_url !== undefined) f.url = f.file_url
+            }
             e.file = i
             break
           case 'xml':

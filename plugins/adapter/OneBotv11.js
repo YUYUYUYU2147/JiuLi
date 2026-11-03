@@ -778,6 +778,31 @@ Bot.adapter.push(
       })
     }
 
+    /** 兼容云崽：e.group.getFileUrl(file_id, busid) 直接返回 url 字符串 */
+    async getGroupFileUrlString(data, file_id, busid) {
+      const pick = (ret) => (typeof ret === "string" ? ret : String(ret?.url || ret?.file_url || ""))
+      let ret = null
+      if (busid !== undefined && busid !== null && busid !== "") {
+        ret = await this.getGroupFileUrl(data, file_id, busid).catch(() => null)
+      }
+      let url = pick(ret)
+      if (!url) {
+        // 群文件段常常不带 busid：翻一遍根目录按 file_id 反查 busid 再取地址
+        try {
+          const list = await data.bot.sendApi("get_group_root_files", { group_id: data.group_id })
+          const files = [...(list?.files || [])]
+          const hit = files.find((f) => String(f.file_id) === String(file_id))
+          if (hit?.busid !== undefined) {
+            ret = await this.getGroupFileUrl(data, file_id, hit.busid).catch(() => null)
+            url = pick(ret)
+          }
+        } catch (err) {
+          Bot.makeLog("debug", `读取群文件地址失败：${err?.message || err}`)
+        }
+      }
+      return url
+    }
+
     getGroupFs(data) {
       return {
         upload: this.sendGroupFile.bind(this, data),
@@ -975,6 +1000,8 @@ Bot.adapter.push(
           return this.avatar || `https://p.qlogo.cn/gh/${group_id}/${group_id}/0`
         },
         getChatHistory: this.getGroupMsgHistory.bind(this, i),
+        // 群文件下载地址：兼容云崽的 e.group.getFileUrl(file_id, busid)
+        getFileUrl: this.getGroupFileUrlString.bind(this, i),
         getHonorInfo: this.getGroupHonorInfo.bind(this, i),
         getEssence: this.getEssenceMsg.bind(this, i),
         getTodoList: this.getGroupTodoList.bind(this, i),
