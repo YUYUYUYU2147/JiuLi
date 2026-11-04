@@ -508,29 +508,43 @@ Bot.adapter.push(
      *
      * 走协议端的 poke 动作而不是 `{type:"poke"}` 消息段：NapCat/LLOneBot 等并不把
      * poke 当消息段发送，原先发 send_msg 带 poke 段会被忽略，表现为「反戳不生效」。
-     * 依次尝试 send_poke（带 group_id 的通用口）→ group_poke/friend_poke → 旧消息段。
+     * 依次尝试 OneBot 实现常见的 poke action，只有 action 不存在时才试别名。
      */
-    async pokeMember(data, user_id, group_id = data.group_id) {
+    async sendPoke(data, user_id, group_id = "") {
       const uid = String(user_id)
-      const attempts = group_id
-        ? [["send_poke", { user_id: uid, group_id: String(group_id) }], ["group_poke", { user_id: uid, group_id: String(group_id) }]]
-        : [["send_poke", { user_id: uid }], ["friend_poke", { user_id: uid }]]
-      for (const [action, params] of attempts) {
+      const params = { user_id: uid }
+      if (group_id) params.group_id = String(group_id)
+      const actions = group_id
+        ? ["send_poke", "send_group_poke", "set_poke", "_send_poke", "poke"]
+        : ["send_poke", "set_poke", "_send_poke", "poke", "friend_poke"]
+      for (const action of actions) {
         try {
-          return await data.bot.sendApi(action, params)
+          const result = await data.bot.sendApi(action, params)
+          Bot.makeLog("info", `戳一戳成功(${action})`, `${data.self_id} => ${group_id || user_id}`, true)
+          return result
         } catch (err) {
           Bot.makeLog("debug", `戳一戳 ${action} 失败：${err?.message || err}`, `${data.self_id} => ${group_id || uid}`)
+          const errorText = `${err?.message || ""} ${err?.error?.msg || ""} ${err?.error?.wording || ""}`
+          if (!/(action|api).*(not found|unknown|不存在|未实现)|接口.*(不存在|不支持)|unsupported.*action/i.test(errorText)) {
+            Bot.makeLog("error", `戳一戳失败：${errorText || err}`, `${data.self_id} => ${group_id || uid}`)
+            return false
+          }
         }
       }
-      // 最后退回消息段（极少数仍支持 poke 段的实现）
-      try {
-        return group_id
-          ? await this.sendGroupMsg(data, { type: "poke", qq: uid })
-          : await this.sendFriendMsg(data, { type: "poke", qq: uid })
-      } catch (err) {
-        Bot.makeLog("debug", `戳一戳失败：${err?.message || err}`)
-        return false
-      }
+      Bot.makeLog("error", "戳一戳失败：协议端未提供可用的 poke action", `${data.self_id} => ${group_id || uid}`)
+      return false
+    }
+
+    async sendFriendPoke(data, user_id) {
+      return this.sendPoke(data, user_id)
+    }
+
+    async sendGroupPoke(data, user_id, group_id = data.group_id) {
+      return this.sendPoke(data, user_id, group_id)
+    }
+
+    async pokeMember(data, user_id, group_id = data.group_id) {
+      return this.sendPoke(data, user_id, group_id)
     }
 
     async setEmojiLike(data, message_id, emoji_id, set = true) {
@@ -905,6 +919,7 @@ Bot.adapter.push(
           return this.avatar || `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`
         },
         getChatHistory: this.getFriendMsgHistory.bind(this, i),
+        poke: () => this.sendFriendPoke(i, user_id),
         thumbUp: this.sendLike.bind(this, i),
         delete: this.deleteFriend.bind(this, i),
         getFileUrl: this.getPrivateFileUrl.bind(this, i),
@@ -941,7 +956,7 @@ Bot.adapter.push(
         getAvatarUrl() {
           return this.avatar || `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`
         },
-        poke: () => this.pokeMember(i, user_id, group_id),
+        poke: () => this.sendGroupPoke(i, user_id),
         mute: this.setGroupBan.bind(this, i, user_id),
         kick: this.setGroupKick.bind(this, i, user_id),
         get is_friend() {
@@ -1012,7 +1027,8 @@ Bot.adapter.push(
         getMemberList: this.getMemberList.bind(this, i),
         getMemberMap: this.getMemberMap.bind(this, i),
         pickMember: this.pickMember.bind(this, i, group_id),
-        pokeMember: qq => this.pokeMember(i, qq, group_id),
+        poke: qq => this.sendGroupPoke(i, qq),
+        pokeMember: qq => this.sendGroupPoke(i, qq),
         // 聊天插件（chatgpt 等）用 e.group.setEmojiLike(消息id, 表情id) 做「回复确认」
         setEmojiLike: this.setEmojiLike.bind(this, i),
         setName: this.setGroupName.bind(this, i),
