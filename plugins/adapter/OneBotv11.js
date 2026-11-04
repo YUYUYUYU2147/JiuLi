@@ -1207,6 +1207,15 @@ Bot.adapter.push(
 
     makeMessage(data) {
       data.message = this.parseMsg(data.message)
+      const selfId = String(data.self_id ?? "")
+      if (
+        selfId &&
+        (data.message.some(segment =>
+          segment?.type === "at" && String(segment.qq ?? segment.data?.qq ?? "") === selfId,
+        ) || new RegExp(`\\[CQ:at,qq=${selfId}(?:,|\\])`).test(String(data.raw_message || "")))
+      ) {
+        data.atBot = true
+      }
       switch (data.message_type) {
         case "private": {
           const name =
