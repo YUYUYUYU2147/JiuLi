@@ -105,7 +105,7 @@ export default class Status extends JiuLiPlugin {
   /**
    * 各插件从开始加载到就绪的耗时（并行导入，含公共依赖解析，仅作参考）
    *
-   * 合并转发一次发全，不截断：几百个插件也只是多几个转发节点，不受单条消息长度限制。
+   * 仍然是合并转发，但整段只放一个节点：以前每行一个节点，在 QQ 里要一条条点开看。
    */
   async pluginSpeed() {
     const entries = Object.entries(PluginsLoader.load_time ?? {}).sort((a, b) => b[1] - a[1])
@@ -117,7 +117,7 @@ export default class Status extends JiuLiPlugin {
       ...entries.map(([file, t], i) => `${String(i + 1).padStart(3)}. ${ms(t).padStart(8)}  ${file}`),
     ]
     return this.reply(
-      Bot.makeForwardArray(lines, { user_id: Bot.uin[0] ?? '10000', nickname: '插件加载耗时' }),
+      Bot.makeForwardArray(lines.join('\n'), { user_id: Bot.uin[0] ?? '10000', nickname: '插件加载耗时' }),
     )
   }
 

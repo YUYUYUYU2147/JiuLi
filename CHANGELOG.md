@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.3.5](https://github.com/HL-z7/JiuLi/compare/jiuli-v4.3.4...jiuli-v4.3.5) (2026-11-07)
+
+
+### 🐛 Bug 修复
+
+* #插件加载 保持合并转发，整段信息只放一个节点 ([2a302aa](https://github.com/HL-z7/JiuLi/commit/2a302aa4124a57d664476296ca1580477dacd101))
+
+## [4.3.4](https://github.com/HL-z7/JiuLi/compare/jiuli-v4.3.3...jiuli-v4.3.4) (2026-11-07)
+
+
+### 🐛 Bug 修复
+
+* #插件加载 改为整段文本输出（不再拆成合并转发节点） ([657b2b7](https://github.com/HL-z7/JiuLi/commit/657b2b711bfcb3ba5940a82e3e1a364ea66a3545))
+
 ## [4.3.3](https://github.com/HL-z7/JiuLi/compare/jiuli-v4.3.2...jiuli-v4.3.3) (2026-11-01)
 
 
