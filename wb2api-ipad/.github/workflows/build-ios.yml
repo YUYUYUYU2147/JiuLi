@@ -1,0 +1,55 @@
+name: Build unsigned iPad IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "**"
+      - ".github/workflows/build-ios.yml"
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Briefcase
+        run: python -m pip install briefcase
+
+      - name: Create iOS project
+        working-directory: .
+        run: briefcase create iOS --no-input
+
+      - name: Update iOS project
+        working-directory: .
+        run: briefcase update iOS --no-input
+
+      - name: Build device app without signing
+        working-directory: .
+        run: |
+          xcodebuild build \
+            -project build/wb2api/ios/xcode/wb2api.xcodeproj \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios-derived \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package IPA for AltStore signing
+        working-directory: .
+        run: |
+          APP_PATH="$(find build/ios-derived/Build/Products/Debug-iphoneos -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          mkdir -p build/unsigned-ipa/Payload
+          ditto "$APP_PATH" build/unsigned-ipa/Payload/wb2api.app
+          ditto -c -k --sequesterRsrc --keepParent build/unsigned-ipa/Payload build/wb2api-1.16.0-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wb2api-1.16.0-unsigned-ipa
+          path: build/wb2api-1.16.0-unsigned.ipa
+          if-no-files-found: error

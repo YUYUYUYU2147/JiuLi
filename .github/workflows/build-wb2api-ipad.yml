@@ -1,0 +1,58 @@
+name: Build wb2api iPad IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/wb2api-ipad-cloud-build
+    paths:
+      - "wb2api-ipad/**"
+      - ".github/workflows/build-wb2api-ipad.yml"
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Briefcase
+        run: python -m pip install briefcase
+
+      - name: Create iOS project
+        working-directory: wb2api-ipad
+        run: briefcase create iOS --no-input
+
+      - name: Update iOS project
+        working-directory: wb2api-ipad
+        run: briefcase update iOS --no-input
+
+      - name: Build device app without signing
+        working-directory: wb2api-ipad
+        run: |
+          xcodebuild build \
+            -project build/wb2api/ios/xcode/wb2api.xcodeproj \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios-derived \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package IPA for device signing
+        working-directory: wb2api-ipad
+        run: |
+          APP_PATH="$(find build/ios-derived/Build/Products/Debug-iphoneos -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          mkdir -p build/unsigned-ipa/Payload
+          ditto "$APP_PATH" build/unsigned-ipa/Payload/wb2api.app
+          ditto -c -k --sequesterRsrc --keepParent build/unsigned-ipa/Payload build/wb2api-1.16.0-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wb2api-1.16.0-unsigned-ipa
+          path: wb2api-ipad/build/wb2api-1.16.0-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

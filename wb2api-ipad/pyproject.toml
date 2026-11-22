@@ -1,0 +1,60 @@
+[project]
+name = "wb2api"
+version = "1.16.0"
+description = "wb2api local gateway for iPad"
+requires-python = ">=3.12,<3.13"
+license = "MIT"
+
+[tool.briefcase]
+project_name = "wb2api-ipad"
+bundle = "io.github.xiaofan6ya"
+version = "1.16.0"
+url = "https://github.com/xiaofan6ya/wb2api"
+license = "MIT"
+license_files = ["LICENSE"]
+author = "wb2api contributors"
+
+[tool.briefcase.app.wb2api]
+formal_name = "wb2api"
+icon.20 = "src/wb2api/icon-20.png"
+icon.29 = "src/wb2api/icon-29.png"
+icon.40 = "src/wb2api/icon-40.png"
+icon.58 = "src/wb2api/icon-58.png"
+icon.60 = "src/wb2api/icon-60.png"
+icon.76 = "src/wb2api/icon-76.png"
+icon.80 = "src/wb2api/icon-80.png"
+icon.87 = "src/wb2api/icon-87.png"
+icon.120 = "src/wb2api/icon-120.png"
+icon.152 = "src/wb2api/icon-152.png"
+icon.167 = "src/wb2api/icon-167.png"
+icon.180 = "src/wb2api/icon-180.png"
+icon.640 = "src/wb2api/icon-640.png"
+icon.1024 = "src/wb2api/icon-1024.png"
+icon.1280 = "src/wb2api/icon-1280.png"
+icon.1920 = "src/wb2api/icon-1920.png"
+description = "wb2api 本机 API 网关"
+sources = ["src/wb2api"]
+requires = [
+    "fastapi==0.115.12",
+    "pydantic==1.10.22",
+    "uvicorn==0.34.2",
+    "httpx==0.28.1",
+    "PyMySQL==1.1.1",
+    "redis==5.2.1",
+    "python-multipart==0.0.20",
+    "PyJWT==2.10.1",
+    "python-dotenv==1.1.0",
+    "packaging==25.0",
+    "tzdata==2026.5",
+]
+
+[tool.briefcase.app.wb2api.iOS]
+requires = ["toga-iOS~=0.5.0"]
+
+[tool.briefcase.app.wb2api.iOS.app]
+min_os_version = "16.0"
+
+[tool.briefcase.app.wb2api.iOS.app.info]
+NSLocalNetworkUsageDescription = "wb2api 在 iPad 本机运行 API 服务。"
+NSAppTransportSecurity = { NSAllowsLocalNetworking = true }
+
