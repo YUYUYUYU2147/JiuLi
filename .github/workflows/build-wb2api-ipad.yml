@@ -35,6 +35,7 @@ jobs:
         run: |
           xcodebuild build \
             -project build/wb2api/ios/xcode/wb2api.xcodeproj \
+            -scheme wb2api \
             -configuration Debug \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
