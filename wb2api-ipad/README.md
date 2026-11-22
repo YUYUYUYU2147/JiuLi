@@ -17,7 +17,7 @@ iPadOS 可能在应用切到后台或设备锁屏后暂停普通应用。本机 
 
 ## 用 Windows 电脑安装
 
-不需要自己买 Mac。仓库内的 `.github/workflows/build-ios.yml` 会让 GitHub 的 macOS 云端电脑编译未签名 IPA。
+不需要自己买 Mac。仓库内的 `.github/workflows/build-ios.yml` 会让 GitHub 的 macOS 云端电脑编译 ad-hoc 签名 IPA，AltServer 会在安装时用你的 Apple 账号重新签名。
 
 1. 在 GitHub 新建一个公开仓库，把本工程目录里的**全部内容**上传到仓库根目录，确认 `.github/workflows/build-ios.yml` 位于根目录下。公开仓库的 macOS GitHub Actions 标准运行时间免费。
 2. 打开仓库的 **Actions**，运行 **Build unsigned iPad IPA**。成功后下载 `wb2api-1.16.0-unsigned-ipa` artifact 并解压，得到 `.ipa`。
@@ -25,7 +25,7 @@ iPadOS 可能在应用切到后台或设备锁屏后暂停普通应用。本机 
 4. 用 AltServer 在 iPad 上安装 AltStore。在 iPad 设置里开启“开发者模式”。
 5. 把 `.ipa` 放入 iPad 的“文件”App，在 AltStore 的 **My Apps** 页面点 `+`，选择 IPA 安装。
 
-免费 Apple 账号签名的侧载应用需要大约每 7 天用 AltServer 刷新一次。该工程目录中的自动构建文件只负责编译和打包，AltStore 在安装时用你的 Apple 账号签名。
+免费 Apple 账号签名的侧载应用需要大约每 7 天用 AltServer 刷新一次。云端构建过程不需要 Apple 账号密码，AltServer 在你的 Windows 电脑上使用 Apple 账号重新签名并安装。
 
 AltStore 官方 Windows 指南：https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows
 
