@@ -30,7 +30,7 @@ jobs:
         working-directory: wb2api-ipad
         run: briefcase update iOS --no-input
 
-      - name: Build device app with ad-hoc signing
+      - name: Build device app for unsigned IPA
         working-directory: wb2api-ipad
         run: |
           xcodebuild build \
@@ -40,11 +40,10 @@ jobs:
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/ios-derived \
-            CODE_SIGNING_ALLOWED=YES \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=-
+            CODE_SIGNING_ALLOWED=NO \
+            EXPANDED_CODE_SIGN_IDENTITY=-
 
-      - name: Package IPA for device signing
+      - name: Package unsigned IPA for device signing
         working-directory: wb2api-ipad
         run: |
           APP_PATH="$(find build/ios-derived/Build/Products/Debug-iphoneos -maxdepth 1 -type d -name '*.app' -print -quit)"
