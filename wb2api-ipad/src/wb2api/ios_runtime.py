@@ -122,6 +122,12 @@ def start(data_directory: str) -> dict:
         if not init_db():
             raise RuntimeError("无法初始化 iPad 本机 SQLite 数据库")
 
+        # Uvicorn imports its optional process supervisor at package import
+        # time. iOS Python omits the _multiprocessing C extension, and this
+        # embedded server intentionally runs in one process.
+        import multiprocessing
+
+        multiprocessing.allow_connection_pickling = lambda: None
         import uvicorn
         from admin.server import app
 

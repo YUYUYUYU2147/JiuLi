@@ -11,13 +11,15 @@
 
 Python 后端和管理网页从 wb2api 官方仓库 `1.16.0` 暂存脚本生成。APK 内的 Android ARM64 Python/OpenSSL/SQLite 二进制没有放入工程。
 
+iOS Python 不含 `_multiprocessing` 扩展。iPad 启动器在导入 Uvicorn 前关闭只用于子进程的连接对象传递钩子，Uvicorn 以单进程模式运行。
+
 ## 后台运行
 
 iPadOS 可能在应用切到后台或设备锁屏后暂停普通应用。本机 API 的可用时间按应用前台运行期间设计。重新打开应用后，服务会恢复检查并启动。
 
 ## 用 Windows 电脑安装
 
-不需要自己买 Mac。仓库内的 `.github/workflows/build-ios.yml` 会让 GitHub 的 macOS 云端电脑编译 ad-hoc 签名 IPA，AltServer 会在安装时用你的 Apple 账号重新签名。
+不需要自己买 Mac。仓库内的 `.github/workflows/build-ios.yml` 会让 GitHub 的 macOS 云端电脑编译未签名 IPA，安装工具会在安装时用你的 Apple 账号签名。
 
 1. 在 GitHub 新建一个公开仓库，把本工程目录里的**全部内容**上传到仓库根目录，确认 `.github/workflows/build-ios.yml` 位于根目录下。公开仓库的 macOS GitHub Actions 标准运行时间免费。
 2. 打开仓库的 **Actions**，运行 **Build unsigned iPad IPA**。成功后下载 `wb2api-1.16.0-unsigned-ipa` artifact 并解压，得到 `.ipa`。
