@@ -1,0 +1,43 @@
+name: Build StarWish Archive iPad IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/wb2api-ipad-cloud-build
+    paths:
+      - "starwish-ipad/**"
+      - ".github/workflows/build-starwish-ipad.yml"
+
+jobs:
+  build-ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build for iPadOS
+        run: |
+          xcodebuild build \
+            -project starwish-ipad/StarWishArchive.xcodeproj \
+            -scheme StarWishArchive \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/starwish-derived \
+            CODE_SIGNING_ALLOWED=NO \
+            EXPANDED_CODE_SIGN_IDENTITY=-
+
+      - name: Package unsigned iPad IPA
+        run: |
+          APP_PATH="$(find build/starwish-derived/Build/Products/Release-iphoneos -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          mkdir -p build/starwish-ipa/Payload
+          ditto "$APP_PATH" build/starwish-ipa/Payload/StarWishArchive.app
+          ditto -c -k --sequesterRsrc --keepParent build/starwish-ipa/Payload build/StarWishArchive-iPadOS16-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StarWishArchive-iPadOS16-unsigned-IPA
+          path: build/StarWishArchive-iPadOS16-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
